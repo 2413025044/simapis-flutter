@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
 import 'admin_dashboard_page.dart';
 import 'register_page.dart';
+import 'guru_dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,12 +13,22 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // =========================
+  // CONTROLLER
+  // =========================
   final TextEditingController usernameController = TextEditingController();
+
   final TextEditingController passwordController = TextEditingController();
 
+  // =========================
+  // VARIABEL
+  // =========================
   String selectedRole = 'Siswa';
   bool isPasswordVisible = false;
 
+  // =========================
+  // DISPOSE
+  // =========================
   @override
   void dispose() {
     usernameController.dispose();
@@ -48,11 +59,9 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
       );
     } else if (selectedRole == 'Guru') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Dashboard Guru belum dibuat'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const GuruDashboardPage()),
       );
     } else {
       Navigator.pushReplacement(
@@ -72,6 +81,9 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // =========================
+  // BUILD
+  // =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(

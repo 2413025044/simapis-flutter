@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'siswa_page.dart';
+import 'guru_page.dart';
+import 'kelas_page.dart';
+import 'pelanggaran_page.dart';
+import 'notifikasi_page.dart';
+import 'laporan_page.dart';
+import 'tata_tertib_page.dart';
+
 class AdminDashboardPage extends StatelessWidget {
   const AdminDashboardPage({super.key});
 
@@ -8,9 +16,9 @@ class AdminDashboardPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
 
-      // =========================
+      // =====================================================
       // APP BAR
-      // =========================
+      // =====================================================
       appBar: AppBar(
         backgroundColor: const Color(0xFF1565C0),
         foregroundColor: Colors.white,
@@ -44,17 +52,17 @@ class AdminDashboardPage extends StatelessWidget {
         ],
       ),
 
-      // =========================
+      // =====================================================
       // BODY
-      // =========================
+      // =====================================================
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =========================
+            // =================================================
             // HEADER ADMIN
-            // =========================
+            // =================================================
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -81,7 +89,9 @@ class AdminDashboardPage extends StatelessWidget {
                       color: Color(0xFF1565C0),
                     ),
                   ),
+
                   SizedBox(width: 15),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,7 +104,9 @@ class AdminDashboardPage extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+
                         SizedBox(height: 6),
+
                         Text(
                           'Kelola data sekolah melalui SIMAPIS',
                           style: TextStyle(color: Colors.white70, fontSize: 13),
@@ -108,9 +120,9 @@ class AdminDashboardPage extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // =========================
-            // JUDUL STATISTIK
-            // =========================
+            // =================================================
+            // RINGKASAN DATA
+            // =================================================
             const Text(
               'Ringkasan Data',
               style: TextStyle(
@@ -122,9 +134,6 @@ class AdminDashboardPage extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // =========================
-            // STATISTIK BARIS 1
-            // =========================
             Row(
               children: [
                 Expanded(
@@ -134,7 +143,9 @@ class AdminDashboardPage extends StatelessWidget {
                     value: '320',
                   ),
                 ),
+
                 const SizedBox(width: 12),
+
                 Expanded(
                   child: _statCard(
                     icon: Icons.school_outlined,
@@ -147,9 +158,6 @@ class AdminDashboardPage extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // =========================
-            // STATISTIK BARIS 2
-            // =========================
             Row(
               children: [
                 Expanded(
@@ -159,7 +167,9 @@ class AdminDashboardPage extends StatelessWidget {
                     value: '295',
                   ),
                 ),
+
                 const SizedBox(width: 12),
+
                 Expanded(
                   child: _statCard(
                     icon: Icons.warning_amber_outlined,
@@ -172,9 +182,9 @@ class AdminDashboardPage extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // =========================
-            // MENU KELOLA DATA
-            // =========================
+            // =================================================
+            // KELOLA DATA
+            // =================================================
             const Text(
               'Kelola Data',
               style: TextStyle(
@@ -194,30 +204,58 @@ class AdminDashboardPage extends StatelessWidget {
               mainAxisSpacing: 12,
               childAspectRatio: 1.35,
               children: [
+                // =============================================
+                // DATA SISWA - SUDAH AKTIF
+                // =============================================
                 _menuCard(
                   icon: Icons.people_outline,
                   title: 'Data Siswa',
                   subtitle: 'Kelola siswa',
                   onTap: () {
-                    _showMessage(context, 'Data Siswa');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SiswaPage(),
+                      ),
+                    );
                   },
                 ),
+
+                // =============================================
+                // DATA GURU
+                // =============================================
                 _menuCard(
                   icon: Icons.person_outline,
                   title: 'Data Guru',
                   subtitle: 'Kelola guru',
                   onTap: () {
-                    _showMessage(context, 'Data Guru');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const GuruPage()),
+                    );
                   },
                 ),
+
+                // =============================================
+                // DATA KELAS
+                // =============================================
                 _menuCard(
                   icon: Icons.class_outlined,
                   title: 'Data Kelas',
                   subtitle: 'Kelola kelas',
                   onTap: () {
-                    _showMessage(context, 'Data Kelas');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const KelasPage(),
+                      ),
+                    );
                   },
                 ),
+
+                // =============================================
+                // ABSENSI
+                // =============================================
                 _menuCard(
                   icon: Icons.assignment_turned_in_outlined,
                   title: 'Absensi',
@@ -226,20 +264,37 @@ class AdminDashboardPage extends StatelessWidget {
                     _showMessage(context, 'Input Absensi');
                   },
                 ),
+
+                // =============================================
+                // PELANGGARAN
+                // =============================================
                 _menuCard(
                   icon: Icons.warning_amber_rounded,
                   title: 'Pelanggaran',
                   subtitle: 'Kelola pelanggaran',
                   onTap: () {
-                    _showMessage(context, 'Pelanggaran');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PelanggaranPage(),
+                      ),
+                    );
                   },
                 ),
+                // =============================================
+                // NOTIFIKASI
+                // =============================================
                 _menuCard(
                   icon: Icons.notifications_outlined,
                   title: 'Notifikasi',
-                  subtitle: 'Kelola notifikasi',
+                  subtitle: 'Notifikasi siswa',
                   onTap: () {
-                    _showMessage(context, 'Notifikasi');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotifikasiPage(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -247,9 +302,9 @@ class AdminDashboardPage extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // =========================
-            // LAPORAN
-            // =========================
+            // =================================================
+            // LAPORAN & PERATURAN
+            // =================================================
             const Text(
               'Laporan & Peraturan',
               style: TextStyle(
@@ -261,28 +316,35 @@ class AdminDashboardPage extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            _largeMenuCard(
-              icon: Icons.assessment_outlined,
+            // LAPORAN
+            _menuCard(
+              icon: Icons.bar_chart_outlined,
               title: 'Laporan Kelas',
-              subtitle: 'Lihat dan cetak laporan absensi siswa',
+              subtitle: 'Lihat laporan kelas',
               onTap: () {
-                _showMessage(context, 'Laporan Kelas');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LaporanPage()),
+                );
               },
             ),
 
-            const SizedBox(height: 12),
-
+            // TATA TERTIB
             _largeMenuCard(
               icon: Icons.menu_book_outlined,
               title: 'Tata Tertib',
-              subtitle: 'Kelola aturan dan poin pelanggaran',
+              subtitle: 'Aturan sekolah',
               onTap: () {
-                _showMessage(context, 'Tata Tertib');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TataTertibPage(),
+                  ),
+                );
               },
             ),
 
-            const SizedBox(height: 12),
-
+            // PENGATURAN
             _largeMenuCard(
               icon: Icons.settings_outlined,
               title: 'Pengaturan',
@@ -294,9 +356,9 @@ class AdminDashboardPage extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // =========================
+            // =================================================
             // PELANGGARAN TERBARU
-            // =========================
+            // =================================================
             const Text(
               'Pelanggaran Terbaru',
               style: TextStyle(
@@ -338,9 +400,9 @@ class AdminDashboardPage extends StatelessWidget {
         ),
       ),
 
-      // =========================
+      // =====================================================
       // BOTTOM NAVIGATION
-      // =========================
+      // =====================================================
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         type: BottomNavigationBarType.fixed,
@@ -352,18 +414,22 @@ class AdminDashboardPage extends StatelessWidget {
             activeIcon: Icon(Icons.dashboard),
             label: 'Beranda',
           ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.people_outline),
             label: 'Siswa',
           ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.assignment_outlined),
             label: 'Absensi',
           ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.warning_amber_outlined),
             label: 'Pelanggaran',
           ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Profil',
@@ -399,9 +465,13 @@ class AdminDashboardPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: const Color(0xFF1565C0), size: 30),
+
           const SizedBox(height: 10),
+
           Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+
           const SizedBox(height: 4),
+
           Text(
             value,
             style: const TextStyle(
@@ -453,13 +523,17 @@ class AdminDashboardPage extends StatelessWidget {
               ),
               child: Icon(icon, color: const Color(0xFF1565C0), size: 27),
             ),
+
             const SizedBox(height: 9),
+
             Text(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
+
             const SizedBox(height: 3),
+
             Text(
               subtitle,
               textAlign: TextAlign.center,
@@ -511,7 +585,9 @@ class AdminDashboardPage extends StatelessWidget {
               ),
               child: Icon(icon, color: Colors.white, size: 27),
             ),
+
             const SizedBox(width: 15),
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,7 +599,9 @@ class AdminDashboardPage extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 4),
+
                   Text(
                     subtitle,
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
@@ -531,6 +609,7 @@ class AdminDashboardPage extends StatelessWidget {
                 ],
               ),
             ),
+
             const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),
@@ -577,7 +656,9 @@ class AdminDashboardPage extends StatelessWidget {
               size: 25,
             ),
           ),
+
           const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,12 +670,16 @@ class AdminDashboardPage extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
                 Text(
                   violation,
                   style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
+
                 const SizedBox(height: 4),
+
                 Text(
                   date,
                   style: const TextStyle(color: Colors.grey, fontSize: 10),
@@ -602,6 +687,7 @@ class AdminDashboardPage extends StatelessWidget {
               ],
             ),
           ),
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
