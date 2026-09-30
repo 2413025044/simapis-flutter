@@ -5,6 +5,7 @@ import 'pelanggaran_page.dart';
 import 'notifikasi_page.dart';
 import 'laporan_page.dart';
 import 'tata_tertib_page.dart';
+import 'profil_page.dart';
 
 class GuruDashboardPage extends StatelessWidget {
   const GuruDashboardPage({super.key});
@@ -14,8 +15,9 @@ class GuruDashboardPage extends StatelessWidget {
   }
 
   void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
   }
 
   @override
@@ -38,11 +40,17 @@ class GuruDashboardPage extends StatelessWidget {
             },
             icon: const Icon(Icons.notifications_outlined),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: const Icon(Icons.person, color: Color(0xFF1565C0)),
+          InkWell(
+            borderRadius: BorderRadius.circular(30),
+            onTap: () {
+              _openPage(context, const ProfilPage(role: 'Guru'));
+            },
+            child: const Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Color(0xFF1565C0)),
+              ),
             ),
           ),
         ],
@@ -53,37 +61,21 @@ class GuruDashboardPage extends StatelessWidget {
         child: Column(
           children: [
             _buildHeader(),
-
             const SizedBox(height: 20),
-
             _buildStatistics(),
-
             const SizedBox(height: 24),
-
             _buildSectionTitle('Menu Utama'),
-
             const SizedBox(height: 12),
-
             _buildMainMenu(context),
-
             const SizedBox(height: 24),
-
             _buildSectionTitle('Laporan & Peraturan'),
-
             const SizedBox(height: 12),
-
             _buildReportMenu(context),
-
             const SizedBox(height: 24),
-
             _buildSectionTitle('Aktivitas Terbaru'),
-
             const SizedBox(height: 12),
-
             _buildRecentActivity(),
-
             const SizedBox(height: 24),
-
             _buildInfoCard(context),
           ],
         ),
@@ -111,7 +103,7 @@ class GuruDashboardPage extends StatelessWidget {
             width: 58,
             height: 58,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(18),
             ),
             child: const Icon(
@@ -120,9 +112,7 @@ class GuruDashboardPage extends StatelessWidget {
               size: 30,
             ),
           ),
-
           const SizedBox(width: 15),
-
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +183,7 @@ class GuruDashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -202,16 +192,12 @@ class GuruDashboardPage extends StatelessWidget {
       child: Column(
         children: [
           Icon(icon, color: const Color(0xFF1565C0), size: 26),
-
           const SizedBox(height: 8),
-
           Text(
             value,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 3),
-
           Text(
             title,
             textAlign: TextAlign.center,
@@ -225,13 +211,12 @@ class GuruDashboardPage extends StatelessWidget {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ],
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -255,7 +240,6 @@ class GuruDashboardPage extends StatelessWidget {
               _openPage(context, const AbsensiPage());
             },
           ),
-
           _menuCard(
             icon: Icons.warning_amber_outlined,
             title: 'Pelanggaran',
@@ -264,7 +248,6 @@ class GuruDashboardPage extends StatelessWidget {
               _openPage(context, const PelanggaranPage());
             },
           ),
-
           _menuCard(
             icon: Icons.notifications_outlined,
             title: 'Notifikasi',
@@ -273,7 +256,6 @@ class GuruDashboardPage extends StatelessWidget {
               _openPage(context, const NotifikasiPage());
             },
           ),
-
           _menuCard(
             icon: Icons.menu_book_outlined,
             title: 'Tata Tertib',
@@ -303,7 +285,7 @@ class GuruDashboardPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -316,21 +298,17 @@ class GuruDashboardPage extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF1565C0).withOpacity(0.1),
+                color: const Color(0xFF1565C0).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: const Color(0xFF1565C0), size: 24),
             ),
-
             const Spacer(),
-
             Text(
               title,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
-
             const SizedBox(height: 3),
-
             Text(
               subtitle,
               style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
@@ -354,9 +332,7 @@ class GuruDashboardPage extends StatelessWidget {
               _openPage(context, const LaporanPage());
             },
           ),
-
           const SizedBox(height: 12),
-
           _largeMenuCard(
             icon: Icons.menu_book_outlined,
             title: 'Tata Tertib',
@@ -386,7 +362,7 @@ class GuruDashboardPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -398,14 +374,12 @@ class GuruDashboardPage extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFF1565C0).withOpacity(0.1),
+                color: const Color(0xFF1565C0).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(icon, color: const Color(0xFF1565C0)),
             ),
-
             const SizedBox(width: 14),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,7 +399,6 @@ class GuruDashboardPage extends StatelessWidget {
                 ],
               ),
             ),
-
             const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),
@@ -468,6 +441,12 @@ class GuruDashboardPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+            ),
+          ],
         ),
         child: Column(
           children: activities.map((activity) {
@@ -482,8 +461,8 @@ class GuruDashboardPage extends StatelessWidget {
                     height: 42,
                     decoration: BoxDecoration(
                       color: isViolation
-                          ? Colors.red.withOpacity(0.1)
-                          : const Color(0xFF1565C0).withOpacity(0.1),
+                          ? Colors.red.withValues(alpha: 0.1)
+                          : const Color(0xFF1565C0).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -492,9 +471,7 @@ class GuruDashboardPage extends StatelessWidget {
                       size: 21,
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -514,7 +491,6 @@ class GuruDashboardPage extends StatelessWidget {
                       ],
                     ),
                   ),
-
                   Text(
                     activity['time'] as String,
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
@@ -542,9 +518,7 @@ class GuruDashboardPage extends StatelessWidget {
         child: Row(
           children: [
             const Icon(Icons.info_outline, color: Colors.white, size: 30),
-
             const SizedBox(width: 14),
-
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -565,7 +539,6 @@ class GuruDashboardPage extends StatelessWidget {
                 ],
               ),
             ),
-
             IconButton(
               onPressed: () {
                 _showMessage(context, 'Panduan SIMAPIS Guru');
@@ -590,6 +563,9 @@ class GuruDashboardPage extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       onTap: (index) {
         switch (index) {
+          case 0:
+            break;
+
           case 1:
             _openPage(context, const AbsensiPage());
             break;
@@ -603,7 +579,7 @@ class GuruDashboardPage extends StatelessWidget {
             break;
 
           case 4:
-            _showMessage(context, 'Profil Guru');
+            _openPage(context, const ProfilPage(role: 'Guru'));
             break;
         }
       },
