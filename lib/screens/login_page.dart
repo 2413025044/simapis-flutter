@@ -4,6 +4,7 @@ import 'dashboard_page.dart';
 import 'admin_dashboard_page.dart';
 import 'register_page.dart';
 import 'guru_dashboard_page.dart';
+import 'simapis_session.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -40,9 +41,10 @@ class _LoginPageState extends State<LoginPage> {
   // FUNGSI LOGIN
   // =========================
   void login() {
-    // Cek username dan password
-    if (usernameController.text.trim().isEmpty ||
-        passwordController.text.isEmpty) {
+    final username = usernameController.text.trim();
+    final password = passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Username dan password harus diisi'),
@@ -52,21 +54,24 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    // LOGIN BERDASARKAN ROLE
+    // Simpan role dan username yang sedang login.
+    SimapisSession.login(username: username, role: selectedRole);
+
+    // Buka dashboard sesuai role.
     if (selectedRole == 'Admin') {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+        MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
       );
     } else if (selectedRole == 'Guru') {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const GuruDashboardPage()),
+        MaterialPageRoute(builder: (_) => const GuruDashboardPage()),
       );
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
+        MaterialPageRoute(builder: (_) => const DashboardPage()),
       );
     }
   }

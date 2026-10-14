@@ -9,6 +9,8 @@ import 'notifikasi_page.dart';
 import 'laporan_page.dart';
 import 'tata_tertib_page.dart';
 import 'profil_page.dart';
+import 'login_page.dart';
+import 'simapis_session.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -33,18 +35,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Color get _muted => _darkMode ? Colors.white70 : const Color(0xFF8A9BB5);
 
   void _openPage(BuildContext context, Widget page) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
   }
 
   void _navigateFromMenu(BuildContext context, Widget page) {
     final navigator = Navigator.of(context);
-    final isDrawerOpen = Scaffold.of(context).isDrawerOpen;
+    final isDrawerOpen = Scaffold.maybeOf(context)?.isDrawerOpen ?? false;
 
     if (isDrawerOpen) {
       navigator.pop();
     }
 
-    _openPage(context, page);
+    navigator.push(MaterialPageRoute<void>(builder: (_) => page));
   }
 
   void _showMessage(String message) {
@@ -53,8 +55,43 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  void _showLogoutMessage() {
-    _showMessage('Fitur keluar perlu dihubungkan dengan halaman login.');
+  // LOGOUT ADMIN
+  Future<void> _confirmLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Keluar dari SIMAPIS?'),
+          content: const Text(
+            'Apakah kamu yakin ingin keluar dari akun Admin?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Keluar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout != true || !mounted) return;
+
+    SimapisSession.logout();
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   @override
@@ -64,11 +101,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return Scaffold(
       backgroundColor: _background,
 
-      // Di HP, menu ditampilkan melalui drawer.
-      // Di laptop, menu tampil sebagai sidebar permanen.
+      // Pada HP menu ditampilkan sebagai drawer.
+      // Pada laptop menu ditampilkan sebagai sidebar permanen.
       drawer: isDesktop
           ? null
-          : Drawer(backgroundColor: _surface, child: _buildSidebar(context)),
+          : Drawer(
+              backgroundColor: _surface,
+              child: Builder(
+                builder: (drawerContext) {
+                  return _buildSidebar(drawerContext);
+                },
+              ),
+            ),
 
       appBar: isDesktop
           ? null
@@ -99,7 +143,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       body: isDesktop
           ? Row(
               children: [
-                SizedBox(width: 260, child: _buildSidebar(context)),
+                SizedBox(
+                  width: 260,
+                  child: Builder(
+                    builder: (sidebarContext) {
+                      return _buildSidebar(sidebarContext);
+                    },
+                  ),
+                ),
                 Expanded(
                   child: Column(
                     children: [
@@ -174,7 +225,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
       IconButton(
         tooltip: 'Keluar',
-        onPressed: _showLogoutMessage,
+        onPressed: _confirmLogout,
         icon: const Icon(Icons.logout_rounded),
       ),
     ];
@@ -247,6 +298,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
               children: [
                 _menuLabel('MENU UTAMA'),
+
                 _menuItem(
                   context,
                   icon: Icons.grid_view_rounded,
@@ -255,18 +307,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   page: const AdminDashboardPage(),
                   isHome: true,
                 ),
+
                 _menuItem(
                   context,
                   icon: Icons.people_outline_rounded,
                   title: 'Data Siswa',
                   page: const SiswaPage(),
                 ),
+
                 _menuItem(
                   context,
                   icon: Icons.person_outline_rounded,
                   title: 'Data Guru',
                   page: const GuruPage(),
                 ),
+
                 _menuItem(
                   context,
                   icon: Icons.home_work_outlined,
@@ -275,19 +330,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ),
 
                 const SizedBox(height: 20),
+
                 _menuLabel('MANAJEMEN'),
+
                 _menuItem(
                   context,
                   icon: Icons.fact_check_outlined,
                   title: 'Input Absensi',
                   page: const AbsensiPage(),
                 ),
+
                 _menuItem(
                   context,
                   icon: Icons.error_outline_rounded,
                   title: 'Pelanggaran',
                   page: const PelanggaranPage(),
                 ),
+
                 _menuItem(
                   context,
                   icon: Icons.notifications_none_rounded,
@@ -296,13 +355,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ),
 
                 const SizedBox(height: 20),
+
                 _menuLabel('LAPORAN'),
+
                 _menuItem(
                   context,
                   icon: Icons.insert_drive_file_outlined,
                   title: 'Laporan Kelas',
                   page: const LaporanPage(),
                 ),
+
                 _menuItem(
                   context,
                   icon: Icons.menu_book_outlined,
@@ -409,7 +471,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
           onTap: () {
             if (isHome) {
-              if (Scaffold.of(context).isDrawerOpen) {
+              if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
                 Navigator.pop(context);
               }
               return;
