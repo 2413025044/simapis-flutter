@@ -10,735 +10,908 @@ import 'laporan_page.dart';
 import 'tata_tertib_page.dart';
 import 'profil_page.dart';
 
-class AdminDashboardPage extends StatelessWidget {
+class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
 
+  @override
+  State<AdminDashboardPage> createState() => _AdminDashboardPageState();
+}
+
+class _AdminDashboardPageState extends State<AdminDashboardPage> {
+  bool _darkMode = false;
+
+  static const Color _blue = Color(0xFF2864F0);
+  static const Color _cyan = Color(0xFF16B8D4);
+
+  Color get _background =>
+      _darkMode ? const Color(0xFF101827) : const Color(0xFFF0F6FF);
+
+  Color get _surface => _darkMode ? const Color(0xFF1B2638) : Colors.white;
+
+  Color get _text => _darkMode ? Colors.white : const Color(0xFF141D32);
+
+  Color get _muted => _darkMode ? Colors.white70 : const Color(0xFF8A9BB5);
+
   void _openPage(BuildContext context, Widget page) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
-  void _showMessage(BuildContext context, String message) {
+  void _navigateFromMenu(BuildContext context, Widget page) {
+    final navigator = Navigator.of(context);
+    final isDrawerOpen = Scaffold.of(context).isDrawerOpen;
+
+    if (isDrawerOpen) {
+      navigator.pop();
+    }
+
+    _openPage(context, page);
+  }
+
+  void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
-  void _showSettings(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+  void _showLogoutMessage() {
+    _showMessage('Fitur keluar perlu dihubungkan dengan halaman login.');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.sizeOf(context).width >= 950;
+
+    return Scaffold(
+      backgroundColor: _background,
+
+      // Di HP, menu ditampilkan melalui drawer.
+      // Di laptop, menu tampil sebagai sidebar permanen.
+      drawer: isDesktop
+          ? null
+          : Drawer(backgroundColor: _surface, child: _buildSidebar(context)),
+
+      appBar: isDesktop
+          ? null
+          : AppBar(
+              backgroundColor: _surface,
+              foregroundColor: _text,
+              elevation: 0,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Dashboard',
+                    style: TextStyle(
+                      color: _text,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Text(
+                    'Selamat datang kembali!',
+                    style: TextStyle(color: _muted, fontSize: 12),
+                  ),
+                ],
+              ),
+              actions: _buildHeaderActions(),
+            ),
+
+      body: isDesktop
+          ? Row(
               children: [
-                const Text(
-                  'Pengaturan',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  leading: const Icon(
-                    Icons.person_outline,
-                    color: Color(0xFF1565C0),
+                SizedBox(width: 260, child: _buildSidebar(context)),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildDesktopHeader(),
+                      Expanded(
+                        child: _buildDashboardContent(context, isDesktop: true),
+                      ),
+                    ],
                   ),
-                  title: const Text('Profil Admin'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _openPage(context, const ProfilPage(role: 'Admin'));
-                  },
                 ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.notifications_outlined,
-                    color: Color(0xFF1565C0),
+              ],
+            )
+          : _buildDashboardContent(context, isDesktop: false),
+    );
+  }
+
+  // =========================================================
+  // HEADER
+  // =========================================================
+
+  Widget _buildDesktopHeader() {
+    return Container(
+      color: _surface,
+      padding: const EdgeInsets.fromLTRB(28, 16, 24, 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dashboard',
+                  style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: _text,
                   ),
-                  title: const Text('Pengaturan Notifikasi'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showMessage(context, 'Pengaturan notifikasi');
-                  },
                 ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.info_outline,
-                    color: Color(0xFF1565C0),
-                  ),
-                  title: const Text('Tentang SIMAPIS'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showMessage(
-                      context,
-                      'SIMAPIS - Sistem Informasi Manajemen Absensi dan Pelanggaran Siswa',
-                    );
-                  },
+                const SizedBox(height: 4),
+                Text(
+                  'Selamat datang kembali!',
+                  style: TextStyle(fontSize: 15, color: _muted),
                 ),
               ],
             ),
+          ),
+          ..._buildHeaderActions(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildHeaderActions() {
+    return [
+      IconButton(
+        tooltip: _darkMode ? 'Mode terang' : 'Mode gelap',
+        onPressed: () {
+          setState(() {
+            _darkMode = !_darkMode;
+          });
+        },
+        icon: Icon(
+          _darkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+        ),
+      ),
+      IconButton(
+        tooltip: 'Notifikasi',
+        onPressed: () {
+          _openPage(context, const NotifikasiPage());
+        },
+        icon: const Icon(Icons.notifications_none_rounded),
+      ),
+      IconButton(
+        tooltip: 'Keluar',
+        onPressed: _showLogoutMessage,
+        icon: const Icon(Icons.logout_rounded),
+      ),
+    ];
+  }
+
+  // =========================================================
+  // SIDEBAR / DRAWER
+  // =========================================================
+
+  Widget _buildSidebar(BuildContext context) {
+    return Container(
+      color: _surface,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 16, 22),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [_blue, _cyan]),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome_mosaic_rounded,
+                    color: Colors.white,
+                    size: 27,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RichText(
+                        text: const TextSpan(
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'SIM',
+                              style: TextStyle(color: Color(0xFF141D32)),
+                            ),
+                            TextSpan(
+                              text: 'APIS',
+                              style: TextStyle(color: Color(0xFF5146F5)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'SMP Negeri 1 Lampung',
+                        style: TextStyle(fontSize: 11, color: _muted),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Divider(height: 1, color: _muted.withValues(alpha: 0.2)),
+
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
+              children: [
+                _menuLabel('MENU UTAMA'),
+                _menuItem(
+                  context,
+                  icon: Icons.grid_view_rounded,
+                  title: 'Beranda',
+                  selected: true,
+                  page: const AdminDashboardPage(),
+                  isHome: true,
+                ),
+                _menuItem(
+                  context,
+                  icon: Icons.people_outline_rounded,
+                  title: 'Data Siswa',
+                  page: const SiswaPage(),
+                ),
+                _menuItem(
+                  context,
+                  icon: Icons.person_outline_rounded,
+                  title: 'Data Guru',
+                  page: const GuruPage(),
+                ),
+                _menuItem(
+                  context,
+                  icon: Icons.home_work_outlined,
+                  title: 'Data Kelas',
+                  page: const KelasPage(),
+                ),
+
+                const SizedBox(height: 20),
+                _menuLabel('MANAJEMEN'),
+                _menuItem(
+                  context,
+                  icon: Icons.fact_check_outlined,
+                  title: 'Input Absensi',
+                  page: const AbsensiPage(),
+                ),
+                _menuItem(
+                  context,
+                  icon: Icons.error_outline_rounded,
+                  title: 'Pelanggaran',
+                  page: const PelanggaranPage(),
+                ),
+                _menuItem(
+                  context,
+                  icon: Icons.notifications_none_rounded,
+                  title: 'Notifikasi Siswa',
+                  page: const NotifikasiPage(),
+                ),
+
+                const SizedBox(height: 20),
+                _menuLabel('LAPORAN'),
+                _menuItem(
+                  context,
+                  icon: Icons.insert_drive_file_outlined,
+                  title: 'Laporan Kelas',
+                  page: const LaporanPage(),
+                ),
+                _menuItem(
+                  context,
+                  icon: Icons.menu_book_outlined,
+                  title: 'Tata Tertib',
+                  page: const TataTertibPage(),
+                ),
+              ],
+            ),
+          ),
+
+          Divider(height: 1, color: _muted.withValues(alpha: 0.2)),
+
+          InkWell(
+            onTap: () {
+              _navigateFromMenu(context, const ProfilPage(role: 'Admin'));
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF5146F5), Color(0xFF8585FF)],
+                      ),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(Icons.person, color: Colors.white),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Administrator',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _text,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'ADMIN',
+                          style: TextStyle(fontSize: 12, color: _muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: _muted),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _menuLabel(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 4, 8, 10),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: _muted,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1,
+        ),
+      ),
+    );
+  }
+
+  Widget _menuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required Widget page,
+    bool selected = false,
+    bool isHome = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: selected ? const Color(0xFFEAF2FF) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: ListTile(
+          dense: true,
+          visualDensity: const VisualDensity(vertical: 1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          leading: Icon(icon, color: selected ? _blue : _muted, size: 22),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: selected ? _blue : _text,
+              fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+          onTap: () {
+            if (isHome) {
+              if (Scaffold.of(context).isDrawerOpen) {
+                Navigator.pop(context);
+              }
+              return;
+            }
+
+            _navigateFromMenu(context, page);
+          },
+        ),
+      ),
+    );
+  }
+
+  // =========================================================
+  // DASHBOARD CONTENT
+  // =========================================================
+
+  Widget _buildDashboardContent(
+    BuildContext context, {
+    required bool isDesktop,
+  }) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isDesktop ? 28 : 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStatistics(isDesktop: isDesktop),
+          const SizedBox(height: 28),
+
+          if (isDesktop)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 5, child: _buildStudentSummary()),
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 5,
+                  child: _buildRecentViolations(context, isDesktop: true),
+                ),
+              ],
+            )
+          else
+            Column(
+              children: [
+                _buildStudentSummary(),
+                const SizedBox(height: 20),
+                _buildRecentViolations(context, isDesktop: false),
+              ],
+            ),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  // =========================================================
+  // STATISTICS
+  // =========================================================
+
+  Widget _buildStatistics({required bool isDesktop}) {
+    final stats = [
+      _StatData(
+        icon: Icons.people_alt_outlined,
+        title: 'Total Siswa',
+        value: '320',
+        iconColor: const Color(0xFF397CF6),
+        iconBackground: const Color(0xFFDCEAFF),
+      ),
+      _StatData(
+        icon: Icons.check_circle_outline_rounded,
+        title: 'Hadir Hari Ini',
+        value: '295',
+        iconColor: const Color(0xFF0AB981),
+        iconBackground: const Color(0xFFD0F8E8),
+      ),
+      _StatData(
+        icon: Icons.warning_amber_rounded,
+        title: 'Pelanggaran Bulan Ini',
+        value: '18',
+        iconColor: const Color(0xFFF5A623),
+        iconBackground: const Color(0xFFFFF0C2),
+      ),
+      _StatData(
+        icon: Icons.school_outlined,
+        title: 'Total Guru',
+        value: '35',
+        iconColor: const Color(0xFFE56B78),
+        iconBackground: const Color(0xFFFFE1E4),
+      ),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: stats.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isDesktop ? 4 : 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: isDesktop ? 1.25 : 1.15,
+      ),
+      itemBuilder: (context, index) {
+        final item = stats[index];
+
+        return Container(
+          padding: EdgeInsets.all(isDesktop ? 22 : 15),
+          decoration: BoxDecoration(
+            color: _surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFD6E5FF)),
+            boxShadow: [
+              BoxShadow(
+                color: _blue.withValues(alpha: 0.05),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: item.iconBackground,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(item.icon, color: item.iconColor, size: 25),
+              ),
+              const Spacer(),
+              Text(
+                item.value,
+                style: TextStyle(
+                  color: _text,
+                  fontSize: isDesktop ? 32 : 27,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                item.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: _muted, fontSize: isDesktop ? 14 : 12),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+  // =========================================================
+  // STUDENT SUMMARY
+  // =========================================================
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1565C0),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Dashboard Admin',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              _openPage(context, const NotifikasiPage());
-            },
-            icon: const Icon(Icons.notifications_outlined),
-          ),
-          InkWell(
-            borderRadius: BorderRadius.circular(30),
-            onTap: () {
-              _openPage(context, const ProfilPage(role: 'Admin'));
-            },
-            child: const Padding(
-              padding: EdgeInsets.only(right: 12),
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.admin_panel_settings_outlined,
-                  color: Color(0xFF1565C0),
+  Widget _buildStudentSummary() {
+    return _panel(
+      title: '📊  Ringkasan Data Siswa',
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _summaryItem(
+                  value: '320',
+                  label: 'Total Siswa',
+                  color: const Color(0xFF5146F5),
                 ),
               ),
+              Expanded(
+                child: _summaryItem(
+                  value: '—',
+                  label: 'Laki-laki',
+                  color: const Color(0xFF3985F6),
+                ),
+              ),
+              Expanded(
+                child: _summaryItem(
+                  value: '—',
+                  label: 'Perempuan',
+                  color: const Color(0xFFF15B5B),
+                ),
+              ),
+              Expanded(
+                child: _summaryItem(
+                  value: '—',
+                  label: 'Kelas Aktif',
+                  color: const Color(0xFF0AB981),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Ringkasan ini akan disesuaikan dengan data '
+              'siswa setelah sumber data terhubung.',
+              style: TextStyle(color: _muted, fontSize: 12, height: 1.5),
             ),
           ),
         ],
       ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 30),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
-            _buildStatistics(),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Kelola Data'),
-            const SizedBox(height: 12),
-            _buildMainMenu(context),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Laporan & Peraturan'),
-            const SizedBox(height: 12),
-            _buildReportMenu(context),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Pelanggaran Terbaru'),
-            const SizedBox(height: 12),
-            _buildRecentViolations(),
-            const SizedBox(height: 24),
-            _buildInfoCard(context),
-          ],
-        ),
-      ),
-
-      bottomNavigationBar: _buildBottomNavigation(context),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF42A5F5), Color(0xFF1565C0), Color(0xFF0D1117)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _summaryItem({
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 25,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _muted, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================================================
+  // RECENT VIOLATIONS
+  // =========================================================
+
+  Widget _buildRecentViolations(
+    BuildContext context, {
+    required bool isDesktop,
+  }) {
+    return _panel(
+      title: '⚠️  Pelanggaran Terbaru',
+      action: TextButton(
+        onPressed: () {
+          _openPage(context, const PelanggaranPage());
+        },
+        child: const Text(
+          'Lihat Semua',
+          style: TextStyle(color: _blue, fontWeight: FontWeight.bold),
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+      ),
+      child: Column(
+        children: [
+          if (isDesktop) _buildViolationTableHeader(),
+
+          _buildViolationRow(
+            name: 'Ahmad Rizky',
+            className: 'Kelas VII-A',
+            violation: 'Terlambat',
+            point: '5',
+            date: '2026-05-15',
+            isDesktop: isDesktop,
+          ),
+          _buildViolationRow(
+            name: 'Dimas Aditya',
+            className: 'Kelas VII-C',
+            violation: 'Tidak Seragam',
+            point: '10',
+            date: '2026-05-14',
+            isDesktop: isDesktop,
+          ),
+          _buildViolationRow(
+            name: 'Siti Aulia',
+            className: 'Kelas VII-B',
+            violation: 'Tidak mengikuti upacara',
+            point: '15',
+            date: 'Kemarin',
+            isDesktop: isDesktop,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildViolationTableHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF0F6FF),
+        border: Border(bottom: BorderSide(color: Color(0xFFDCE8FC))),
       ),
       child: Row(
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(
-              Icons.admin_panel_settings_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 15),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Halo, Admin! 👋',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  'Kelola data sekolah melalui SIMAPIS',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
+          _tableHeader('SISWA', 3),
+          _tableHeader('PELANGGARAN', 3),
+          _tableHeader('POIN', 1),
+          _tableHeader('TANGGAL', 2),
         ],
       ),
     );
   }
 
-  Widget _buildStatistics() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Ringkasan Data',
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+  Widget _tableHeader(String label, int flex) {
+    return Expanded(
+      flex: flex,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: _blue,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _statCard(
-                  icon: Icons.people_alt_outlined,
-                  title: 'Total Siswa',
-                  value: '320',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _statCard(
-                  icon: Icons.school_outlined,
-                  title: 'Total Guru',
-                  value: '35',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _statCard(
-                  icon: Icons.how_to_reg_outlined,
-                  title: 'Hadir Hari Ini',
-                  value: '295',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _statCard(
-                  icon: Icons.warning_amber_outlined,
-                  title: 'Pelanggaran',
-                  value: '18',
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _statCard({
-    required IconData icon,
-    required String title,
-    required String value,
+  Widget _buildViolationRow({
+    required String name,
+    required String className,
+    required String violation,
+    required String point,
+    required String date,
+    required bool isDesktop,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 8 : 4,
+        vertical: 15,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        border: Border(
+          bottom: BorderSide(color: _muted.withValues(alpha: 0.2)),
+        ),
+      ),
+      child: isDesktop
+          ? Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            color: _text,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          className,
+                          style: TextStyle(color: _muted, fontSize: 10),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      violation,
+                      style: TextStyle(color: _text, fontSize: 11),
+                    ),
+                  ),
+                ),
+                Expanded(flex: 1, child: _pointBadge(point)),
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      date,
+                      style: TextStyle(color: _text, fontSize: 10),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                          color: _text,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    _pointBadge(point),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  '$className • $violation',
+                  style: TextStyle(color: _muted, fontSize: 12),
+                ),
+                const SizedBox(height: 5),
+                Text(date, style: TextStyle(color: _muted, fontSize: 11)),
+              ],
+            ),
+    );
+  }
+
+  Widget _pointBadge(String point) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFD0F8E8),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Text(
+        point,
+        style: const TextStyle(
+          color: Color(0xFF087F5B),
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  // =========================================================
+  // REUSABLE PANEL
+  // =========================================================
+
+  Widget _panel({
+    required String title,
+    required Widget child,
+    Widget? action,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD6E5FF)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: _blue.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFF1565C0), size: 30),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildMainMenu(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.count(
-        crossAxisCount: 2,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.25,
-        children: [
-          _menuCard(
-            icon: Icons.people_outline,
-            title: 'Data Siswa',
-            subtitle: 'Kelola siswa',
-            onTap: () {
-              _openPage(context, const SiswaPage());
-            },
-          ),
-          _menuCard(
-            icon: Icons.person_outline,
-            title: 'Data Guru',
-            subtitle: 'Kelola guru',
-            onTap: () {
-              _openPage(context, const GuruPage());
-            },
-          ),
-          _menuCard(
-            icon: Icons.class_outlined,
-            title: 'Data Kelas',
-            subtitle: 'Kelola kelas',
-            onTap: () {
-              _openPage(context, const KelasPage());
-            },
-          ),
-          _menuCard(
-            icon: Icons.assignment_turned_in_outlined,
-            title: 'Absensi',
-            subtitle: 'Kelola absensi',
-            onTap: () {
-              _openPage(context, const AbsensiPage());
-            },
-          ),
-          _menuCard(
-            icon: Icons.warning_amber_outlined,
-            title: 'Pelanggaran',
-            subtitle: 'Kelola pelanggaran',
-            onTap: () {
-              _openPage(context, const PelanggaranPage());
-            },
-          ),
-          _menuCard(
-            icon: Icons.notifications_outlined,
-            title: 'Notifikasi',
-            subtitle: 'Kelola notifikasi',
-            onTap: () {
-              _openPage(context, const NotifikasiPage());
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _menuCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE3F2FD),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: const Color(0xFF1565C0), size: 26),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReportMenu(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          _largeMenuCard(
-            icon: Icons.bar_chart_outlined,
-            title: 'Laporan Kelas',
-            subtitle: 'Lihat rekap absensi dan pelanggaran',
-            onTap: () {
-              _openPage(context, const LaporanPage());
-            },
-          ),
-          const SizedBox(height: 12),
-          _largeMenuCard(
-            icon: Icons.menu_book_outlined,
-            title: 'Tata Tertib',
-            subtitle: 'Aturan dan sanksi sekolah',
-            onTap: () {
-              _openPage(context, const TataTertibPage());
-            },
-          ),
-          const SizedBox(height: 12),
-          _largeMenuCard(
-            icon: Icons.settings_outlined,
-            title: 'Pengaturan',
-            subtitle: 'Pengaturan sistem dan akun',
-            onTap: () {
-              _showSettings(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _largeMenuCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF42A5F5), Color(0xFF1565C0)],
-                ),
-                borderRadius: BorderRadius.all(Radius.circular(14)),
-              ),
-              child: Icon(icon, color: Colors.white, size: 27),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
+                      color: _text,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentViolations() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          _violationCard(
-            name: 'Ahmad Rizky',
-            violation: 'Terlambat masuk sekolah',
-            point: '5 poin',
-            date: 'Hari ini',
-          ),
-          const SizedBox(height: 10),
-          _violationCard(
-            name: 'Siti Aulia',
-            violation: 'Tidak menggunakan atribut lengkap',
-            point: '10 poin',
-            date: 'Hari ini',
-          ),
-          const SizedBox(height: 10),
-          _violationCard(
-            name: 'Budi Pratama',
-            violation: 'Tidak mengikuti upacara',
-            point: '15 poin',
-            date: 'Kemarin',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _violationCard({
-    required String name,
-    required String violation,
-    required String point,
-    required String date,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: const Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.orange,
-              size: 25,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  violation,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  date,
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 10),
-                ),
+                if (action != null) action,
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              point,
-              style: const TextStyle(
-                color: Colors.orange,
-                fontWeight: FontWeight.bold,
-                fontSize: 11,
-              ),
-            ),
-          ),
+          Divider(height: 1, color: _muted.withValues(alpha: 0.2)),
+          Padding(padding: const EdgeInsets.all(16), child: child),
         ],
       ),
     );
   }
+}
 
-  Widget _buildInfoCard(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1565C0), Color(0xFF0D1117)],
-          ),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.info_outline, color: Colors.white, size: 30),
-            const SizedBox(width: 14),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'SIMAPIS Admin',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    'Kelola seluruh data absensi dan pelanggaran siswa melalui sistem.',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              onPressed: () {
-                _showMessage(context, 'Panduan SIMAPIS Admin');
-              },
-              icon: const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white,
-                size: 17,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+class _StatData {
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color iconColor;
+  final Color iconBackground;
 
-  Widget _buildBottomNavigation(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFF1565C0),
-      unselectedItemColor: Colors.grey,
-      onTap: (index) {
-        switch (index) {
-          case 0:
-            break;
-
-          case 1:
-            _openPage(context, const SiswaPage());
-            break;
-
-          case 2:
-            _openPage(context, const AbsensiPage());
-            break;
-
-          case 3:
-            _openPage(context, const PelanggaranPage());
-            break;
-
-          case 4:
-            _openPage(context, const ProfilPage(role: 'Admin'));
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard_outlined),
-          activeIcon: Icon(Icons.dashboard),
-          label: 'Beranda',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.people_outline),
-          label: 'Siswa',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.assignment_outlined),
-          label: 'Absensi',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.warning_amber_outlined),
-          label: 'Pelanggaran',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
-        ),
-      ],
-    );
-  }
+  const _StatData({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.iconColor,
+    required this.iconBackground,
+  });
 }
