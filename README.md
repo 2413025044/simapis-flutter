@@ -47,3 +47,6 @@ Buka folder proyek menggunakan Visual Studio Code.
 Jalankan perintah berikut pada terminal:
 flutter pub get
 flutter run
+
+
+Tampilan Apilkasi
