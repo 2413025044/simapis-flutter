@@ -43,7 +43,9 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _toggleTheme() {
-    setState(() => _isDarkMode = !_isDarkMode);
+    setState(() {
+      _isDarkMode = !_isDarkMode;
+    });
   }
 
   void _showNotifications(BuildContext context) {
@@ -84,24 +86,24 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, screen) {
-        final desktop = screen.maxWidth >= 950;
+    return Theme(
+      data: ThemeData(
+        brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: _studentBlue,
+          brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+        ),
+        scaffoldBackgroundColor: _background,
+        appBarTheme: AppBarTheme(
+          backgroundColor: _panel,
+          foregroundColor: _text,
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, screen) {
+          final desktop = screen.maxWidth >= 950;
 
-        return Theme(
-          data: ThemeData(
-            brightness: _isDarkMode ? Brightness.dark : Brightness.light,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: _studentBlue,
-              brightness: _isDarkMode ? Brightness.dark : Brightness.light,
-            ),
-            scaffoldBackgroundColor: _background,
-            appBarTheme: AppBarTheme(
-              backgroundColor: _panel,
-              foregroundColor: _text,
-            ),
-          ),
-          child: Scaffold(
+          return Scaffold(
             backgroundColor: _background,
             drawer: desktop
                 ? null
@@ -138,12 +140,13 @@ class _DashboardPageState extends State<DashboardPage> {
                     ],
                   )
                 : _buildContent(context, desktop: false),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
+  // Tombol notifikasi, tema, dan logout hanya berada di kanan atas.
   List<Widget> _buildHeaderActions(BuildContext context) => [
     IconButton(
       tooltip: 'Notifikasi',
@@ -212,60 +215,56 @@ class _DashboardPageState extends State<DashboardPage> {
                   onTap: () =>
                       _openPage(context, const ProfilPage(role: 'Siswa')),
                 ),
-                const SizedBox(height: 8),
-                _navItem(Icons.logout_rounded, 'Logout', onTap: _confirmLogout),
-                _navItem(
-                  _isDarkMode
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
-                  _isDarkMode ? 'Tema Terang' : 'Tema Gelap',
-                  onTap: _toggleTheme,
-                ),
               ],
             ),
           ),
           Divider(height: 1, color: _border),
-          Container(
-            margin: const EdgeInsets.all(14),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _panel,
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: _border),
-            ),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  backgroundColor: Color(0xFF665AF0),
-                  child: Text(
-                    'S',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+
+          // Bagian bawah sidebar hanya menampilkan profil siswa.
+          InkWell(
+            onTap: () => _openPage(context, const ProfilPage(role: 'Siswa')),
+            child: Container(
+              margin: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _panel,
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: _border),
+              ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    backgroundColor: Color(0xFF665AF0),
+                    child: Text(
+                      'S',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Siswa',
-                        style: TextStyle(
-                          color: _text,
-                          fontWeight: FontWeight.w800,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Siswa',
+                          style: TextStyle(
+                            color: _text,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'SISWA',
-                        style: TextStyle(color: _muted, fontSize: 11),
-                      ),
-                    ],
+                        const SizedBox(height: 3),
+                        Text(
+                          'SISWA',
+                          style: TextStyle(color: _muted, fontSize: 11),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -306,6 +305,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
+                const SizedBox(height: 3),
                 Text(
                   'SMP Negeri 1 Lampung',
                   style: TextStyle(color: _muted, fontSize: 11),
@@ -379,6 +379,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   'Selamat datang kembali!',
                   style: TextStyle(color: _muted, fontSize: 14),
@@ -415,6 +416,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ],
                     );
                   }
+
                   return Column(
                     children: [
                       _buildAttendanceHistory(),
@@ -659,6 +661,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           if (attendance && index == 1) {
             final present = row[index] == 'Hadir';
+
             value = Align(
               alignment: Alignment.centerLeft,
               child: Container(
@@ -722,8 +725,10 @@ class _DashboardPageState extends State<DashboardPage> {
       if (headers[1] == 'STATUS') {
         return index == 0 ? 11 : (index == 1 ? 8 : 12);
       }
+
       return index == 0 ? 10 : (index == 1 ? 16 : 5);
     }
+
     return 10;
   }
 
