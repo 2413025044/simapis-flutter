@@ -5,103 +5,191 @@ import 'notifikasi_page.dart';
 import 'pelanggaran_page.dart';
 import 'tata_tertib_page.dart';
 import 'profil_page.dart';
+import 'login_page.dart';
 
 const Color _studentBlue = Color(0xFF2563EB);
 const Color _studentCyan = Color(0xFF06B6D4);
 const Color _studentInk = Color(0xFF172033);
-const Color _studentBackground = Color(0xFFF0F6FF);
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  bool _isDarkMode = false;
+
+  Color get _background =>
+      _isDarkMode ? const Color(0xFF101827) : const Color(0xFFF0F6FF);
+
+  Color get _panel => _isDarkMode ? const Color(0xFF1E293B) : Colors.white;
+
+  Color get _text => _isDarkMode ? const Color(0xFFF1F5F9) : _studentInk;
+
+  Color get _muted =>
+      _isDarkMode ? const Color(0xFFB0BDD0) : const Color(0xFF91A2BD);
+
+  Color get _border =>
+      _isDarkMode ? const Color(0xFF334155) : const Color(0xFFD6E5FF);
+
   void _openPage(BuildContext context, Widget page) {
-    final navigator = Navigator.of(context);
     if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
-      navigator.pop();
+      Navigator.of(context).pop();
     }
-    navigator.push(MaterialPageRoute<void>(builder: (_) => page));
+
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+  }
+
+  void _toggleTheme() {
+    setState(() => _isDarkMode = !_isDarkMode);
+  }
+
+  void _showNotifications(BuildContext context) {
+    _openPage(context, const NotifikasiPage());
+  }
+
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: _panel,
+        title: Text('Keluar dari akun?', style: TextStyle(color: _text)),
+        content: Text(
+          'Apakah kamu yakin ingin keluar dari dashboard siswa?',
+          style: TextStyle(color: _muted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || confirmed != true) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, screen) {
-        final bool desktop = screen.maxWidth >= 950;
-        return Scaffold(
-          backgroundColor: _studentBackground,
-          drawer: desktop
-              ? null
-              : Drawer(
-                  child: Builder(
-                    builder: (drawerContext) => _buildSidebar(drawerContext),
+        final desktop = screen.maxWidth >= 950;
+
+        return Theme(
+          data: ThemeData(
+            brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: _studentBlue,
+              brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+            ),
+            scaffoldBackgroundColor: _background,
+            appBarTheme: AppBarTheme(
+              backgroundColor: _panel,
+              foregroundColor: _text,
+            ),
+          ),
+          child: Scaffold(
+            backgroundColor: _background,
+            drawer: desktop
+                ? null
+                : Drawer(
+                    backgroundColor: _panel,
+                    child: _buildSidebar(context),
                   ),
-                ),
-          appBar: desktop
-              ? null
-              : AppBar(
-                  backgroundColor: Colors.white,
-                  foregroundColor: _studentInk,
-                  elevation: 0,
-                  title: const Text(
-                    'Dashboard Siswa',
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-          body: desktop
-              ? Row(
-                  children: [
-                    SizedBox(width: 250, child: _buildSidebar(context)),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          _buildDesktopHeader(),
-                          Expanded(
-                            child: _buildContent(context, desktop: true),
-                          ),
-                        ],
+            appBar: desktop
+                ? null
+                : AppBar(
+                    title: Text(
+                      'Dashboard Siswa',
+                      style: TextStyle(
+                        color: _text,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                  ],
-                )
-              : _buildContent(context, desktop: false),
+                    actions: _buildHeaderActions(context),
+                  ),
+            body: desktop
+                ? Row(
+                    children: [
+                      SizedBox(width: 250, child: _buildSidebar(context)),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            _buildDesktopHeader(context),
+                            Expanded(
+                              child: _buildContent(context, desktop: true),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : _buildContent(context, desktop: false),
+          ),
         );
       },
     );
   }
 
+  List<Widget> _buildHeaderActions(BuildContext context) => [
+    IconButton(
+      tooltip: 'Notifikasi',
+      onPressed: () => _showNotifications(context),
+      icon: const Icon(Icons.notifications_none_rounded),
+    ),
+    IconButton(
+      tooltip: _isDarkMode ? 'Tema terang' : 'Tema gelap',
+      onPressed: _toggleTheme,
+      icon: Icon(
+        _isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+      ),
+    ),
+    IconButton(
+      tooltip: 'Logout',
+      onPressed: _confirmLogout,
+      icon: const Icon(Icons.logout_rounded),
+    ),
+    const SizedBox(width: 6),
+  ];
+
   Widget _buildSidebar(BuildContext context) {
     return Container(
-      color: const Color(0xFFF9FBFF),
+      color: _panel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _brandHeader(),
-          const Divider(height: 1, color: Color(0xFFDCE8FA)),
+          Divider(height: 1, color: _border),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
               children: [
                 _sidebarLabel('MENU UTAMA'),
+                _navItem(Icons.dashboard_outlined, 'Beranda', selected: true),
                 _navItem(
-                  context,
-                  Icons.dashboard_outlined,
-                  'Beranda',
-                  selected: true,
-                ),
-                _navItem(
-                  context,
                   Icons.edit_note_rounded,
                   'Isi Absensi',
                   onTap: () => _openPage(context, const KirimKehadiranPage()),
                 ),
                 _navItem(
-                  context,
                   Icons.fact_check_outlined,
                   'Riwayat Absensi',
                   onTap: () => _showHistory(context),
                 ),
                 _navItem(
-                  context,
                   Icons.error_outline_rounded,
                   'Riwayat Pelanggaran',
                   onTap: () => _openPage(context, const PelanggaranPage()),
@@ -109,75 +197,75 @@ class DashboardPage extends StatelessWidget {
                 const SizedBox(height: 18),
                 _sidebarLabel('INFORMASI'),
                 _navItem(
-                  context,
                   Icons.menu_book_outlined,
                   'Tata Tertib',
                   onTap: () => _openPage(context, const TataTertibPage()),
                 ),
                 _navItem(
-                  context,
                   Icons.notifications_none_rounded,
                   'Notifikasi Saya',
-                  onTap: () => _openPage(context, const NotifikasiPage()),
+                  onTap: () => _showNotifications(context),
                 ),
                 _navItem(
-                  context,
                   Icons.person_outline_rounded,
                   'Profil Saya',
                   onTap: () =>
                       _openPage(context, const ProfilPage(role: 'Siswa')),
                 ),
+                const SizedBox(height: 8),
+                _navItem(Icons.logout_rounded, 'Logout', onTap: _confirmLogout),
+                _navItem(
+                  _isDarkMode
+                      ? Icons.light_mode_rounded
+                      : Icons.dark_mode_rounded,
+                  _isDarkMode ? 'Tema Terang' : 'Tema Gelap',
+                  onTap: _toggleTheme,
+                ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFDCE8FA)),
-          InkWell(
-            onTap: () => _openPage(context, const ProfilPage(role: 'Siswa')),
-            child: Container(
-              margin: const EdgeInsets.all(14),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: const Color(0xFFDCE8FA)),
-              ),
-              child: const Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Color(0xFF665AF0),
-                    child: Text(
-                      'S',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+          Divider(height: 1, color: _border),
+          Container(
+            margin: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _panel,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: _border),
+            ),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  backgroundColor: Color(0xFF665AF0),
+                  child: Text(
+                    'S',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Siswa',
+                        style: TextStyle(
+                          color: _text,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'SISWA',
+                        style: TextStyle(color: _muted, fontSize: 11),
+                      ),
+                    ],
                   ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Siswa',
-                          style: TextStyle(
-                            color: _studentInk,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        SizedBox(height: 3),
-                        Text(
-                          'SISWA',
-                          style: TextStyle(
-                            color: Color(0xFF91A2BD),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -206,22 +294,21 @@ class DashboardPage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'SIMAPIS',
                   style: TextStyle(
-                    color: _studentInk,
+                    color: _text,
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                SizedBox(height: 3),
                 Text(
                   'SMP Negeri 1 Lampung',
-                  style: TextStyle(color: Color(0xFF91A2BD), fontSize: 11),
+                  style: TextStyle(color: _muted, fontSize: 11),
                 ),
               ],
             ),
@@ -235,8 +322,8 @@ class DashboardPage extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(12, 6, 8, 9),
     child: Text(
       label,
-      style: const TextStyle(
-        color: Color(0xFF91A2BD),
+      style: TextStyle(
+        color: _muted,
         fontSize: 11,
         fontWeight: FontWeight.w800,
         letterSpacing: 1,
@@ -245,7 +332,6 @@ class DashboardPage extends StatelessWidget {
   );
 
   Widget _navItem(
-    BuildContext context,
     IconData icon,
     String title, {
     VoidCallback? onTap,
@@ -257,95 +343,97 @@ class DashboardPage extends StatelessWidget {
         dense: true,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         selected: selected,
-        selectedTileColor: const Color(0xFFE6F0FF),
-        leading: Icon(
-          icon,
-          color: selected ? _studentBlue : const Color(0xFF647895),
-          size: 21,
-        ),
+        selectedTileColor: _isDarkMode
+            ? const Color(0xFF263B60)
+            : const Color(0xFFE6F0FF),
+        leading: Icon(icon, color: selected ? _studentBlue : _muted, size: 21),
         title: Text(
           title,
           style: TextStyle(
-            color: selected ? _studentBlue : const Color(0xFF5F718E),
+            color: selected ? _studentBlue : _text,
             fontSize: 13,
             fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
           ),
         ),
-        onTap:
-            onTap ??
-            () {
-              if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
-                Navigator.of(context).pop();
-              }
-            },
+        onTap: onTap,
       ),
     );
   }
 
-  Widget _buildDesktopHeader() => Container(
-    width: double.infinity,
-    color: Colors.white,
-    padding: const EdgeInsets.fromLTRB(28, 18, 28, 17),
-    child: const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Dashboard',
-          style: TextStyle(
-            color: _studentInk,
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
+  Widget _buildDesktopHeader(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: _panel,
+      padding: const EdgeInsets.fromLTRB(28, 18, 20, 17),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dashboard',
+                  style: TextStyle(
+                    color: _text,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  'Selamat datang kembali!',
+                  style: TextStyle(color: _muted, fontSize: 14),
+                ),
+              ],
+            ),
           ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          'Selamat datang kembali!',
-          style: TextStyle(color: Color(0xFF91A2BD), fontSize: 14),
-        ),
-      ],
-    ),
-  );
+          ..._buildHeaderActions(context),
+        ],
+      ),
+    );
+  }
 
   Widget _buildContent(BuildContext context, {required bool desktop}) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final contentWidth = constraints.maxWidth;
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(desktop ? 28 : 16),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildStats(contentWidth),
-                  const SizedBox(height: 22),
-                  if (contentWidth >= 760)
-                    Row(
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(desktop ? 28 : 16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStats(),
+              const SizedBox(height: 22),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth >= 760) {
+                    return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: _buildAttendanceHistory()),
                         const SizedBox(width: 20),
                         Expanded(child: _buildViolationHistory(context)),
                       ],
-                    )
-                  else ...[
-                    _buildAttendanceHistory(),
-                    const SizedBox(height: 18),
-                    _buildViolationHistory(context),
-                  ],
-                  const SizedBox(height: 22),
-                  _buildQuickAction(context),
-                ],
+                    );
+                  }
+                  return Column(
+                    children: [
+                      _buildAttendanceHistory(),
+                      const SizedBox(height: 18),
+                      _buildViolationHistory(context),
+                    ],
+                  );
+                },
               ),
-            ),
+              const SizedBox(height: 22),
+              _buildQuickAction(context),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildStats(double width) {
+  Widget _buildStats() {
     final stats = <_StudentStat>[
       _StudentStat(
         '95%',
@@ -376,12 +464,14 @@ class DashboardPage extends StatelessWidget {
         const Color(0xFFFFE0E0),
       ),
     ];
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 1050 ? 4 : 2;
         const gap = 14.0;
         final cardWidth =
             (constraints.maxWidth - gap * (columns - 1)) / columns;
+
         return Wrap(
           spacing: gap,
           runSpacing: gap,
@@ -393,46 +483,48 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _statCard(_StudentStat item) => Container(
-    constraints: const BoxConstraints(minHeight: 154),
-    padding: const EdgeInsets.all(20),
-    decoration: _panelDecoration(),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: item.background,
-            borderRadius: BorderRadius.circular(13),
+  Widget _statCard(_StudentStat item) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 154),
+      padding: const EdgeInsets.all(20),
+      decoration: _panelDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: item.background,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(item.icon, color: item.color, size: 24),
           ),
-          child: Icon(item.icon, color: item.color, size: 24),
-        ),
-        const SizedBox(height: 17),
-        Text(
-          item.value,
-          style: const TextStyle(
-            color: _studentInk,
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
+          const SizedBox(height: 17),
+          Text(
+            item.value,
+            style: TextStyle(
+              color: _text,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          item.label,
-          style: const TextStyle(
-            color: Color(0xFF91A2BD),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+          const SizedBox(height: 5),
+          Text(
+            item.label,
+            style: TextStyle(
+              color: _muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 
   Widget _buildAttendanceHistory() => _tablePanel(
-    title: '📋  Riwayat Absensi Terakhir',
+    title: 'Riwayat Absensi Terakhir',
     headers: const ['TANGGAL', 'STATUS', 'KETERANGAN'],
     rows: const [
       ['15 Mei 2026', 'Hadir', '-'],
@@ -443,7 +535,7 @@ class DashboardPage extends StatelessWidget {
   );
 
   Widget _buildViolationHistory(BuildContext context) => _tablePanel(
-    title: '⚠️  Riwayat Pelanggaran',
+    title: 'Riwayat Pelanggaran',
     headers: const ['TANGGAL', 'PELANGGARAN', 'POIN'],
     rows: const [
       ['10 Mei 2026', 'Terlambat masuk sekolah', '5'],
@@ -471,8 +563,8 @@ class DashboardPage extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
-                      color: _studentInk,
+                    style: TextStyle(
+                      color: _text,
                       fontSize: 15,
                       fontWeight: FontWeight.w900,
                     ),
@@ -492,7 +584,7 @@ class DashboardPage extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFDCE8FA)),
+          Divider(height: 1, color: _border),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
@@ -508,14 +600,11 @@ class DashboardPage extends StatelessWidget {
                     ),
                   ),
                   if (rows.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(20),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
                       child: Text(
                         'Tidak ada data lain',
-                        style: TextStyle(
-                          color: Color(0xFF91A2BD),
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: _muted, fontSize: 12),
                       ),
                     ),
                 ],
@@ -529,7 +618,7 @@ class DashboardPage extends StatelessWidget {
 
   Widget _buildTableHeader(List<String> headers) {
     return Container(
-      color: const Color(0xFFF7FAFF),
+      color: _isDarkMode ? const Color(0xFF263449) : const Color(0xFFF7FAFF),
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
       child: Row(
         children: List.generate(headers.length, (index) {
@@ -556,14 +645,14 @@ class DashboardPage extends StatelessWidget {
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 15),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFFDCE8FA))),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: _border)),
       ),
       child: Row(
         children: List.generate(row.length, (index) {
           Widget value = Text(
             row[index],
-            style: const TextStyle(color: Color(0xFF334155), fontSize: 11),
+            style: TextStyle(color: _text, fontSize: 11),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           );
@@ -630,71 +719,78 @@ class DashboardPage extends StatelessWidget {
 
   int _columnFlex(List<String> headers, int index) {
     if (headers.length == 3 && headers[0] == 'TANGGAL') {
-      if (headers[1] == 'STATUS')
+      if (headers[1] == 'STATUS') {
         return index == 0 ? 11 : (index == 1 ? 8 : 12);
+      }
       return index == 0 ? 10 : (index == 1 ? 16 : 5);
     }
     return 10;
   }
 
-  Widget _buildQuickAction(BuildContext context) => Container(
-    decoration: _panelDecoration(),
-    padding: const EdgeInsets.all(18),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '⚡  Aksi Cepat',
-          style: TextStyle(
-            color: _studentInk,
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
+  Widget _buildQuickAction(BuildContext context) {
+    return Container(
+      decoration: _panelDecoration(),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Aksi Cepat',
+            style: TextStyle(
+              color: _text,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: () => _openPage(context, const KirimKehadiranPage()),
-            style: FilledButton.styleFrom(
-              backgroundColor: _studentBlue,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _openPage(context, const KirimKehadiranPage()),
+              style: FilledButton.styleFrom(
+                backgroundColor: _studentBlue,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              icon: const Icon(Icons.camera_alt_rounded),
+              label: const Text(
+                'Lapor Kehadiran Hari Ini',
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
-            icon: const Icon(Icons.camera_alt_rounded),
-            label: const Text(
-              'Lapor Kehadiran Hari Ini',
-              style: TextStyle(fontWeight: FontWeight.w800),
-            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 
   BoxDecoration _panelDecoration() => BoxDecoration(
-    color: Colors.white,
+    color: _panel,
     borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: const Color(0xFFD6E5FF)),
-    boxShadow: [
-      BoxShadow(
-        color: const Color(0xFF2B64B7).withValues(alpha: 0.04),
-        blurRadius: 14,
-        offset: const Offset(0, 5),
-      ),
-    ],
+    border: Border.all(color: _border),
+    boxShadow: _isDarkMode
+        ? []
+        : [
+            BoxShadow(
+              color: const Color(0xFF2B64B7).withValues(alpha: 0.04),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
   );
 
   void _showHistory(BuildContext context) {
-    if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false)
+    if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
       Navigator.pop(context);
+    }
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.white,
+      backgroundColor: _panel,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
@@ -704,18 +800,18 @@ class DashboardPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Ringkasan Riwayat Absensi',
               style: TextStyle(
-                color: _studentInk,
+                color: _text,
                 fontSize: 19,
                 fontWeight: FontWeight.w900,
               ),
             ),
             const SizedBox(height: 7),
-            const Text(
+            Text(
               'Angka ini masih berupa data contoh dan belum terhubung ke database.',
-              style: TextStyle(color: Color(0xFF91A2BD), fontSize: 12),
+              style: TextStyle(color: _muted, fontSize: 12),
             ),
             const SizedBox(height: 18),
             _historyLine('Hadir', '15 hari', const Color(0xFF10B981)),
@@ -747,14 +843,11 @@ class DashboardPage extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(label, style: const TextStyle(color: _studentInk)),
+          child: Text(label, style: TextStyle(color: _text)),
         ),
         Text(
           value,
-          style: const TextStyle(
-            color: _studentInk,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: _text, fontWeight: FontWeight.bold),
         ),
       ],
     ),
@@ -767,6 +860,7 @@ class _StudentStat {
   final IconData icon;
   final Color color;
   final Color background;
+
   const _StudentStat(
     this.value,
     this.label,
