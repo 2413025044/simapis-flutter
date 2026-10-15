@@ -1,17 +1,47 @@
-# flutter_application_1
+Sistem Informasi Manajemen Absensi dan Pelanggaran Siswa
 
-A new Flutter project.
+Deskripsi Aplikasi
+SIMAPIS Flutter merupakan prototype aplikasi mobile yang dikembangkan untuk membantu pengelolaan informasi absensi dan pelanggaran siswa. Aplikasi ini dirancang agar pengguna dapat mengakses informasi sekolah melalui antarmuka yang mudah digunakan.
 
-## Getting Started
+Tujuan
+Mengembangkan prototype aplikasi mobile sebagai bagian dari mata kuliah Mobile Programming serta menerapkan penggunaan Flutter dan bahasa pemrograman Dart.
 
-This project is a starting point for a Flutter application.
+Fitur Aplikasi
+Fitur yang dikembangkan disesuaikan dengan progres prototype saat ini, meliputi:
 
-A few resources to get you started if this is your first Flutter project:
+Login
+Dashboard
+Navigasi antarmenu=
+Absensi siswa
+Riwayat pelanggaran
+Tata tertib
+Notifikasi
+Profil pengguna
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Catatan: Fitur yang belum berfungsi sepenuhnya masih dalam tahap pengembangan.
+Teknologi yang Digunakan
+Flutter
+Dart
+Visual Studio Code
+Git dan GitHub
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Struktur Proyek
+
+lib/
+├── screens/
+│   ├── dashboard_page.dart
+│   ├── login_page.dart
+│   ├── kirim_kehadiran_page.dart
+│   ├── notifikasi_page.dart
+│   ├── pelanggaran_page.dart
+│   ├── tata_tertib_page.dart
+│   └── profil_page.dart
+└── main.dart
+
+Cara Menjalankan Aplikasi
+Instal Flutter SDK dan siapkan emulator atau perangkat Android.
+Clone repositori ini.
+Buka folder proyek di Visual Studio Code.
+Jalankan perintah berikut di terminal:
+flutter pub get
+flutter run
