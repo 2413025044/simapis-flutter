@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import 'dashboard_page.dart';
 import 'admin_dashboard_page.dart';
@@ -14,22 +18,14 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // =========================
-  // CONTROLLER
-  // =========================
   final TextEditingController usernameController = TextEditingController();
-
   final TextEditingController passwordController = TextEditingController();
 
-  // =========================
-  // VARIABEL
-  // =========================
-  String selectedRole = 'Siswa';
   bool isPasswordVisible = false;
+  bool isLoading = false;
 
-  // =========================
-  // DISPOSE
-  // =========================
+  static const String apiUrl = 'http://localhost/simapis_api/login.php';
+
   @override
   void dispose() {
     usernameController.dispose();
@@ -37,67 +33,138 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // =========================
-  // FUNGSI LOGIN
-  // =========================
-  void login() {
-    final username = usernameController.text.trim();
-    final password = passwordController.text;
+  void showMessage(String message) {
+    if (!mounted) return;
 
-    if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Username dan password harus diisi'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    // Simpan role dan username yang sedang login.
-    SimapisSession.login(username: username, role: selectedRole);
-
-    // Buka dashboard sesuai role.
-    if (selectedRole == 'Admin') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
-      );
-    } else if (selectedRole == 'Guru') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const GuruDashboardPage()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
-      );
-    }
-  }
-
-  // =========================
-  // FUNGSI DAFTAR
-  // =========================
-  void openRegister() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const RegisterPage()),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
-  // =========================
-  // BUILD
-  // =========================
+  Future<void> login() async {
+    final String username = usernameController.text.trim();
+    final String password = passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      showMessage('Username dan password harus diisi.');
+      return;
+    }
+
+    if (isLoading) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(apiUrl),
+            headers: const {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+
+      dynamic result;
+
+      try {
+        result = jsonDecode(response.body);
+      } on FormatException {
+        showMessage('Respons API tidak valid. Periksa file login.php.');
+        return;
+      }
+
+      if (result is! Map) {
+        showMessage('Format respons dari server tidak valid.');
+        return;
+      }
+
+      if (response.statusCode != 200 ||
+          result['success'] != true ||
+          result['data'] is! Map) {
+        final String message =
+            (result['message'] ?? 'Login gagal. Periksa akun kamu.').toString();
+
+        showMessage(message);
+        return;
+      }
+
+      final Map<String, dynamic> data = Map<String, dynamic>.from(
+        result['data'] as Map,
+      );
+
+      final String roleApi = (data['role'] ?? '')
+          .toString()
+          .trim()
+          .toLowerCase();
+
+      final String accountUsername = (data['username'] ?? username).toString();
+
+      late final String roleLabel;
+      late final Widget destination;
+
+      switch (roleApi) {
+        case 'admin':
+          roleLabel = 'Admin';
+          destination = const AdminDashboardPage();
+          break;
+
+        case 'guru':
+          roleLabel = 'Guru';
+          destination = const GuruDashboardPage();
+          break;
+
+        case 'siswa':
+          roleLabel = 'Siswa';
+          destination = const DashboardPage();
+          break;
+
+        default:
+          showMessage('Role akun tidak dikenali. Periksa data pengguna.');
+          return;
+      }
+
+      SimapisSession.login(username: accountUsername, role: roleLabel);
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute<void>(builder: (context) => destination),
+      );
+    } on TimeoutException {
+      showMessage('Server terlalu lama merespons. Coba lagi.');
+    } on http.ClientException {
+      showMessage('API tidak dapat diakses. Periksa server dan CORS.');
+    } catch (e) {
+      showMessage('Terjadi kesalahan saat login. Periksa koneksi API.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  void openRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (context) => const RegisterPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: Stack(
         children: [
-          // =========================
-          // BACKGROUND GRADASI
-          // =========================
           Container(
             height: MediaQuery.of(context).size.height * 0.43,
             decoration: const BoxDecoration(
@@ -113,9 +180,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
 
-          // =========================
-          // LINGKARAN DEKORASI 1
-          // =========================
           Positioned(
             top: -70,
             right: -50,
@@ -129,9 +193,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
 
-          // =========================
-          // LINGKARAN DEKORASI 2
-          // =========================
           Positioned(
             top: 180,
             left: -80,
@@ -145,9 +206,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
 
-          // =========================
-          // ISI HALAMAN
-          // =========================
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -155,9 +213,6 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 55),
 
-                  // =========================
-                  // LOGO
-                  // =========================
                   Container(
                     width: 82,
                     height: 82,
@@ -181,9 +236,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 18),
 
-                  // =========================
-                  // NAMA APLIKASI
-                  // =========================
                   const Text(
                     'SIMAPIS',
                     style: TextStyle(
@@ -209,9 +261,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 45),
 
-                  // =========================
-                  // CARD LOGIN
-                  // =========================
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
@@ -229,9 +278,6 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // =========================
-                        // JUDUL
-                        // =========================
                         const Text(
                           'Selamat Datang!',
                           style: TextStyle(
@@ -250,9 +296,6 @@ class _LoginPageState extends State<LoginPage> {
 
                         const SizedBox(height: 28),
 
-                        // =========================
-                        // USERNAME
-                        // =========================
                         const Text(
                           'Username / NIS',
                           style: TextStyle(
@@ -266,6 +309,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         TextField(
                           controller: usernameController,
+                          textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
                             hintText: 'Masukkan username atau NIS',
                             hintStyle: const TextStyle(
@@ -294,9 +338,6 @@ class _LoginPageState extends State<LoginPage> {
 
                         const SizedBox(height: 18),
 
-                        // =========================
-                        // PASSWORD
-                        // =========================
                         const Text(
                           'Password',
                           style: TextStyle(
@@ -311,6 +352,11 @@ class _LoginPageState extends State<LoginPage> {
                         TextField(
                           controller: passwordController,
                           obscureText: !isPasswordVisible,
+                          onSubmitted: (_) {
+                            if (!isLoading) {
+                              login();
+                            }
+                          },
                           decoration: InputDecoration(
                             hintText: 'Masukkan password',
                             hintStyle: const TextStyle(
@@ -350,64 +396,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
 
-                        const SizedBox(height: 18),
-
-                        // =========================
-                        // PILIH ROLE
-                        // =========================
-                        const Text(
-                          'Masuk Sebagai',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF333333),
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        DropdownButtonFormField<String>(
-                          initialValue: selectedRole,
-                          decoration: InputDecoration(
-                            prefixIcon: const Icon(
-                              Icons.badge_outlined,
-                              color: Color(0xFF1565C0),
-                            ),
-                            filled: true,
-                            fillColor: const Color(0xFFF5F7FA),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'Admin',
-                              child: Text('Admin'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'Guru',
-                              child: Text('Guru'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'Siswa',
-                              child: Text('Siswa'),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                selectedRole = value;
-                              });
-                            }
-                          },
-                        ),
-
                         const SizedBox(height: 28),
 
-                        // =========================
-                        // TOMBOL LOGIN
-                        // =========================
                         SizedBox(
                           width: double.infinity,
                           height: 54,
@@ -431,47 +421,61 @@ class _LoginPageState extends State<LoginPage> {
                               ],
                             ),
                             child: ElevatedButton(
-                              onPressed: login,
+                              onPressed: isLoading ? null : login,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
+                                disabledBackgroundColor: Colors.transparent,
                                 foregroundColor: Colors.white,
+                                disabledForegroundColor: Colors.white,
                                 shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.login_rounded),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    'LOGIN',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1,
+                              child: isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                  : const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.login_rounded),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          'LOGIN',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
                         ),
 
                         const SizedBox(height: 20),
 
-                        // =========================
-                        // DAFTAR
-                        // =========================
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
-                              'Belum punya akun?',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 13,
+                            const Flexible(
+                              child: Text(
+                                'Belum punya akun?',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                             TextButton(
@@ -493,9 +497,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 25),
 
-                  // =========================
-                  // FOOTER
-                  // =========================
                   const Text(
                     '© 2026 SIMAPIS',
                     style: TextStyle(color: Colors.grey, fontSize: 12),
