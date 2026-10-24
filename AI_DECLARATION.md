@@ -1,5 +1,4 @@
 AI DECLARATION
-Deklarasi Penggunaan Kecerdasan Buatan
 
 1. Informasi Proyek
 Nama Aplikasi: SIMAPIS Flutter
