@@ -10,6 +10,10 @@ import 'register_page.dart';
 import 'guru_dashboard_page.dart';
 import 'simapis_session.dart';
 
+<?php
+require_once __DIR__ . '/cors.php';
+
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
