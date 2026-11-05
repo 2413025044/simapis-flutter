@@ -19,11 +19,16 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController usernameController = TextEditingController();
+
   final TextEditingController passwordController = TextEditingController();
 
   bool isPasswordVisible = false;
   bool isLoading = false;
 
+  // Role yang dipilih pengguna
+  String? selectedRole;
+
+  // Alamat API PHP
   static const String apiUrl = 'http://localhost/simapis_api/login.php';
 
   @override
@@ -33,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  // Menampilkan pesan
   void showMessage(String message) {
     if (!mounted) return;
 
@@ -41,12 +47,21 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // Proses login
   Future<void> login() async {
     final String username = usernameController.text.trim();
+
     final String password = passwordController.text;
 
+    // Validasi username dan password
     if (username.isEmpty || password.isEmpty) {
       showMessage('Username dan password harus diisi.');
+      return;
+    }
+
+    // Validasi pilihan role
+    if (selectedRole == null) {
+      showMessage('Silakan pilih role terlebih dahulu.');
       return;
     }
 
@@ -75,25 +90,28 @@ class _LoginPageState extends State<LoginPage> {
       try {
         result = jsonDecode(response.body);
       } on FormatException {
-        showMessage('Respons API tidak valid. Periksa file login.php.');
+        showMessage('Respons API tidak valid. Periksa login.php.');
         return;
       }
 
       if (result is! Map) {
-        showMessage('Format respons dari server tidak valid.');
+        showMessage('Format respons server tidak valid.');
         return;
       }
 
+      // Pemeriksaan hasil login
       if (response.statusCode != 200 ||
           result['success'] != true ||
           result['data'] is! Map) {
         final String message =
-            (result['message'] ?? 'Login gagal. Periksa akun kamu.').toString();
+            (result['message'] ?? 'Login gagal. Periksa username dan password.')
+                .toString();
 
         showMessage(message);
         return;
       }
 
+      // Mengambil data akun dari database
       final Map<String, dynamic> data = Map<String, dynamic>.from(
         result['data'] as Map,
       );
@@ -105,9 +123,19 @@ class _LoginPageState extends State<LoginPage> {
 
       final String accountUsername = (data['username'] ?? username).toString();
 
+      // Memastikan role akun sesuai pilihan
+      if (roleApi != selectedRole) {
+        showMessage(
+          'Role akun tidak sesuai dengan pilihan. '
+          'Silakan pilih role yang benar.',
+        );
+        return;
+      }
+
       late final String roleLabel;
       late final Widget destination;
 
+      // Navigasi berdasarkan role dari database
       switch (roleApi) {
         case 'admin':
           roleLabel = 'Admin';
@@ -129,10 +157,12 @@ class _LoginPageState extends State<LoginPage> {
           return;
       }
 
+      // Menyimpan sesi pengguna
       SimapisSession.login(username: accountUsername, role: roleLabel);
 
       if (!mounted) return;
 
+      // Masuk ke dashboard sesuai role
       Navigator.pushReplacement(
         context,
         MaterialPageRoute<void>(builder: (context) => destination),
@@ -152,6 +182,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // Membuka halaman daftar
   void openRegister() {
     Navigator.push(
       context,
@@ -165,6 +196,7 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: const Color(0xFFF5F7FA),
       body: Stack(
         children: [
+          // Background gradient
           Container(
             height: MediaQuery.of(context).size.height * 0.43,
             decoration: const BoxDecoration(
@@ -180,6 +212,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
 
+          // Lingkaran dekorasi kanan
           Positioned(
             top: -70,
             right: -50,
@@ -193,6 +226,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
 
+          // Lingkaran dekorasi kiri
           Positioned(
             top: 180,
             left: -80,
@@ -213,6 +247,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 55),
 
+                  // Logo
                   Container(
                     width: 82,
                     height: 82,
@@ -261,6 +296,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 45),
 
+                  // Kartu login
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
@@ -296,6 +332,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         const SizedBox(height: 28),
 
+                        // Username
                         const Text(
                           'Username / NIS',
                           style: TextStyle(
@@ -309,6 +346,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         TextField(
                           controller: usernameController,
+                          enabled: !isLoading,
                           textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
                             hintText: 'Masukkan username atau NIS',
@@ -338,6 +376,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         const SizedBox(height: 18),
 
+                        // Password
                         const Text(
                           'Password',
                           style: TextStyle(
@@ -351,7 +390,9 @@ class _LoginPageState extends State<LoginPage> {
 
                         TextField(
                           controller: passwordController,
+                          enabled: !isLoading,
                           obscureText: !isPasswordVisible,
+                          textInputAction: TextInputAction.done,
                           onSubmitted: (_) {
                             if (!isLoading) {
                               login();
@@ -368,11 +409,13 @@ class _LoginPageState extends State<LoginPage> {
                               color: Color(0xFF1565C0),
                             ),
                             suffixIcon: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  isPasswordVisible = !isPasswordVisible;
-                                });
-                              },
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        isPasswordVisible = !isPasswordVisible;
+                                      });
+                                    },
                               icon: Icon(
                                 isPasswordVisible
                                     ? Icons.visibility_outlined
@@ -396,8 +439,73 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
 
+                        const SizedBox(height: 18),
+
+                        // Dropdown role
+                        const Text(
+                          'Masuk Sebagai',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF333333),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        DropdownButtonFormField<String>(
+                          value: selectedRole,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            hintText: 'Pilih role pengguna',
+                            hintStyle: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.admin_panel_settings_outlined,
+                              color: Color(0xFF1565C0),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF5F7FA),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF1565C0),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          items: const [
+                            DropdownMenuItem<String>(
+                              value: 'admin',
+                              child: Text('Administrator'),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: 'guru',
+                              child: Text('Guru'),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: 'siswa',
+                              child: Text('Siswa'),
+                            ),
+                          ],
+                          onChanged: isLoading
+                              ? null
+                              : (value) {
+                                  setState(() {
+                                    selectedRole = value;
+                                  });
+                                },
+                        ),
+
                         const SizedBox(height: 28),
 
+                        // Tombol login
                         SizedBox(
                           width: double.infinity,
                           height: 54,
@@ -466,6 +574,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         const SizedBox(height: 20),
 
+                        // Link daftar
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -479,7 +588,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             TextButton(
-                              onPressed: openRegister,
+                              onPressed: isLoading ? null : openRegister,
                               child: const Text(
                                 'Daftar',
                                 style: TextStyle(

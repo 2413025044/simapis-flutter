@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -13,9 +17,14 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController konfirmasiController = TextEditingController();
 
+  static const String apiUrl = 'http://localhost/simapis_api/siswa.php';
+
   String selectedClass = 'X IPA 1';
+  String selectedGender = 'L';
+
   bool isPasswordVisible = false;
   bool isKonfirmasiVisible = false;
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -26,42 +35,108 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void register() {
-    if (nisController.text.trim().isEmpty ||
-        namaController.text.trim().isEmpty ||
-        passwordController.text.isEmpty ||
-        konfirmasiController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Semua data harus diisi'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    if (passwordController.text != konfirmasiController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Konfirmasi password tidak sama'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
+  void showMessage(String message) {
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Pendaftaran berhasil'),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
+  }
 
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        Navigator.pop(context);
-      }
+  // PROSES REGISTRASI SISWA KE DATABASE
+  Future<void> register() async {
+    final String nis = nisController.text.trim();
+    final String nama = namaController.text.trim();
+    final String password = passwordController.text;
+    final String konfirmasi = konfirmasiController.text;
+
+    if (nis.isEmpty || nama.isEmpty || password.isEmpty || konfirmasi.isEmpty) {
+      showMessage('Semua data wajib diisi.');
+      return;
+    }
+
+    if (password.length < 6) {
+      showMessage('Password minimal 6 karakter.');
+      return;
+    }
+
+    if (password != konfirmasi) {
+      showMessage('Konfirmasi password tidak sama.');
+      return;
+    }
+
+    if (isLoading) return;
+
+    setState(() {
+      isLoading = true;
     });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(apiUrl),
+            headers: const {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'action': 'create',
+              'nis': nis,
+              'nama': nama,
+              'kelas': selectedClass,
+              'jenis_kelamin': selectedGender,
+              'username': nis,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+
+      dynamic result;
+
+      try {
+        result = jsonDecode(response.body);
+      } on FormatException {
+        showMessage('Respons server tidak valid. Periksa siswa.php.');
+        return;
+      }
+
+      if (result is! Map) {
+        showMessage('Format respons server tidak valid.');
+        return;
+      }
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          result['success'] == true) {
+        showMessage(
+          'Registrasi berhasil! Silakan login menggunakan NIS dan password.',
+        );
+
+        await Future.delayed(const Duration(seconds: 1));
+
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      } else {
+        showMessage(
+          (result['message'] ?? 'Registrasi gagal. Periksa kembali data kamu.')
+              .toString(),
+        );
+      }
+    } on TimeoutException {
+      showMessage('Server terlalu lama merespons. Coba lagi.');
+    } on http.ClientException {
+      showMessage('API tidak dapat diakses. Periksa Apache dan CORS.');
+    } catch (e) {
+      showMessage('Terjadi kesalahan saat registrasi. Periksa koneksi API.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
   InputDecoration inputDecoration({
@@ -93,7 +168,7 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: const Color(0xFFF5F7FA),
       body: Stack(
         children: [
-          // Background gradasi
+          // BACKGROUND GRADASI
           Container(
             height: 260,
             decoration: const BoxDecoration(
@@ -116,13 +191,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   const SizedBox(height: 30),
 
-                  // Tombol kembali
+                  // TOMBOL KEMBALI
                   Align(
                     alignment: Alignment.centerLeft,
                     child: IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
+                      onPressed: isLoading
+                          ? null
+                          : () => Navigator.pop(context),
                       icon: const Icon(
                         Icons.arrow_back_rounded,
                         color: Colors.white,
@@ -150,7 +225,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 35),
 
-                  // Card Register
+                  // CARD REGISTER
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
@@ -189,7 +264,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         // NIS
                         TextField(
                           controller: nisController,
-                          keyboardType: TextInputType.number,
+                          enabled: !isLoading,
+                          keyboardType: TextInputType.text,
                           decoration: inputDecoration(
                             label: 'NIS',
                             hint: 'Masukkan NIS',
@@ -199,9 +275,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                         const SizedBox(height: 16),
 
-                        // Nama
+                        // NAMA
                         TextField(
                           controller: namaController,
+                          enabled: !isLoading,
                           textCapitalization: TextCapitalization.words,
                           decoration: inputDecoration(
                             label: 'Nama Lengkap',
@@ -212,7 +289,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                         const SizedBox(height: 16),
 
-                        // Kelas
+                        // KELAS
                         DropdownButtonFormField<String>(
                           initialValue: selectedClass,
                           decoration: inputDecoration(
@@ -250,20 +327,54 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Text('XII IPS 1'),
                             ),
                           ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                selectedClass = value;
-                              });
-                            }
-                          },
+                          onChanged: isLoading
+                              ? null
+                              : (value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      selectedClass = value;
+                                    });
+                                  }
+                                },
                         ),
 
                         const SizedBox(height: 16),
 
-                        // Password
+                        // JENIS KELAMIN
+                        DropdownButtonFormField<String>(
+                          initialValue: selectedGender,
+                          decoration: inputDecoration(
+                            label: 'Jenis Kelamin',
+                            hint: 'Pilih jenis kelamin',
+                            icon: Icons.wc_outlined,
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'L',
+                              child: Text('Laki-laki'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'P',
+                              child: Text('Perempuan'),
+                            ),
+                          ],
+                          onChanged: isLoading
+                              ? null
+                              : (value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      selectedGender = value;
+                                    });
+                                  }
+                                },
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // PASSWORD
                         TextField(
                           controller: passwordController,
+                          enabled: !isLoading,
                           obscureText: !isPasswordVisible,
                           decoration:
                               inputDecoration(
@@ -272,11 +383,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                 icon: Icons.lock_outline_rounded,
                               ).copyWith(
                                 suffixIcon: IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      isPasswordVisible = !isPasswordVisible;
-                                    });
-                                  },
+                                  onPressed: isLoading
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            isPasswordVisible =
+                                                !isPasswordVisible;
+                                          });
+                                        },
                                   icon: Icon(
                                     isPasswordVisible
                                         ? Icons.visibility_outlined
@@ -289,9 +403,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
                         const SizedBox(height: 16),
 
-                        // Konfirmasi password
+                        // KONFIRMASI PASSWORD
                         TextField(
                           controller: konfirmasiController,
+                          enabled: !isLoading,
                           obscureText: !isKonfirmasiVisible,
                           decoration:
                               inputDecoration(
@@ -300,12 +415,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                 icon: Icons.lock_reset_outlined,
                               ).copyWith(
                                 suffixIcon: IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      isKonfirmasiVisible =
-                                          !isKonfirmasiVisible;
-                                    });
-                                  },
+                                  onPressed: isLoading
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            isKonfirmasiVisible =
+                                                !isKonfirmasiVisible;
+                                          });
+                                        },
                                   icon: Icon(
                                     isKonfirmasiVisible
                                         ? Icons.visibility_outlined
@@ -316,9 +433,28 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                         ),
 
+                        const SizedBox(height: 12),
+
+                        // INFORMASI USERNAME
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE3F2FD),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Username login otomatis menggunakan NIS yang didaftarkan.',
+                            style: TextStyle(
+                              color: Color(0xFF1565C0),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+
                         const SizedBox(height: 28),
 
-                        // Tombol daftar
+                        // TOMBOL DAFTAR
                         SizedBox(
                           width: double.infinity,
                           height: 54,
@@ -334,35 +470,49 @@ class _RegisterPageState extends State<RegisterPage> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: ElevatedButton(
-                              onPressed: register,
+                              onPressed: isLoading ? null : register,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
+                                disabledBackgroundColor: Colors.transparent,
                                 foregroundColor: Colors.white,
+                                disabledForegroundColor: Colors.white,
                                 shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: const Text(
-                                'DAFTAR',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1,
-                                ),
-                              ),
+                              child: isLoading
+                                  ? const SizedBox(
+                                      width: 23,
+                                      height: 23,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'DAFTAR',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
 
                         const SizedBox(height: 15),
 
-                        // Kembali login
+                        // KEMBALI LOGIN
                         Center(
                           child: TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
+                            onPressed: isLoading
+                                ? null
+                                : () => Navigator.pop(context),
                             child: const Text(
                               'Sudah punya akun? Login',
                               style: TextStyle(
